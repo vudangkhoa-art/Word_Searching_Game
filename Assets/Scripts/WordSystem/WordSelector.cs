@@ -77,9 +77,9 @@ public class WordSelector : MonoBehaviour
     {
         List<string> dictionary =
             wordLibrary.GetWordsByLength(
-                3,
-                config.GridSize
-            );
+                config.MinWordLength,
+                config.MaxWordLength
+        );
 
         List<string> candidates =
             wordLibrary.GetWordsByLength(

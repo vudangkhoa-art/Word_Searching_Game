@@ -163,14 +163,17 @@ public class PuzzleGenerator : MonoBehaviour
         out char[,] resultBoard,
         out List<PlacedWordData> resultPlacements)
     {
+        int placementFailures = 0;
+        int validationFailures = 0;
+        string lastUnexpectedWord = "";
         resultBoard = null;
         resultPlacements = null;
 
         List<string> dictionary =
             wordLibrary.GetWordsByLength(
-                3,
-                config.GridSize
-            );
+                config.MinWordLength,
+                config.MaxWordLength
+        );
 
         const int maxWordSets = 12;
         const int maxLayoutsPerSet = 6;
@@ -202,7 +205,10 @@ public class PuzzleGenerator : MonoBehaviour
                 );
 
                 if (!placed)
+                {
+                    placementFailures++;
                     continue;
+                }
 
                 for (int fillTry = 0;
                     fillTry < maxFillAttempts;
@@ -219,6 +225,12 @@ public class PuzzleGenerator : MonoBehaviour
                         dictionary,
                         out string unexpectedWord
                     );
+                    
+                    if (!valid)
+                    {
+                        validationFailures++;
+                        lastUnexpectedWord = unexpectedWord;
+                    }
 
                     if (valid)
                     {
@@ -237,6 +249,13 @@ public class PuzzleGenerator : MonoBehaviour
 
             wordSelector.SelectWords(config);
         }
+
+        Debug.LogError(
+            $"Puzzle generation failed. " +
+            $"Placement failures: {placementFailures}, " +
+            $"Validation failures: {validationFailures}, " +
+            $"Last unexpected word: {lastUnexpectedWord}"
+        );
 
         return false;
     }
