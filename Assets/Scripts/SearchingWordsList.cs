@@ -16,35 +16,61 @@ public class SearchingWordsList : MonoBehaviour
 
     private List<GameObject> _words = new List<GameObject>();
 
-    private void Start()
-    {
-        _wordsNumber = currentGameData.selectedBoardData.SearchWords.Count;
+    private readonly List<int> unrevealedIndexes = new List<int>();
 
-        if(_wordsNumber < _columns)
-            _rows = 1;
-        else
-            CalculateColumnsAndRowsNumber();
+
+    public void BuildList()
+    {
+        foreach (GameObject wordObject in _words)
+        {
+            if (wordObject != null)
+                Destroy(wordObject);
+        }
+
+        _words.Clear();
+
+        if (currentGameData == null ||
+            currentGameData.selectedBoardData == null)
+        {
+            Debug.LogError("Searching words data is missing!");
+            return;
+        }
+
+        _wordsNumber =
+            currentGameData.selectedBoardData.SearchWords.Count;
+
+        if (_wordsNumber == 0)
+            return;
+
+        _columns = 2;
+        _rows = 1;
+
+        CalculateColumnsAndRowsNumber();
 
         CreateWordObjects();
         SetWordsPosition();
     }
 
+
+
     private void CalculateColumnsAndRowsNumber()
     {
-        do
+        _columns = Mathf.Min(2, Mathf.Max(1, maxColums));
+
+        _rows = Mathf.CeilToInt(
+            (float)_wordsNumber / _columns
+        );
+
+        while (_rows > maxRows && _columns < maxColums)
         {
             _columns++;
-            _rows = _wordsNumber / _columns;
 
-        }while (_rows >= maxRows);
-
-        if(_columns > maxColums)
-        {
-            _columns = maxColums;
-            _rows = _wordsNumber / _columns;
+            _rows = Mathf.CeilToInt(
+                (float)_wordsNumber / _columns
+            );
         }
-
     }
+
 
     private bool TryIncreaseColumnNumber()
     {
@@ -166,7 +192,7 @@ public class SearchingWordsList : MonoBehaviour
 
     private Vector2 GetFirstSquarePosition()
     {
-        var startPosition = new Vector2(0f, transform.position.y);
+        var startPosition = new Vector2(0f, 0f);
         var squareRect = _words[0].GetComponent<RectTransform>();
         var parentRect = this.GetComponent<RectTransform>();
         var squareSize = new Vector2(0f, 0f);
@@ -183,4 +209,67 @@ public class SearchingWordsList : MonoBehaviour
 
         return startPosition;
     }
+
+    
+    public void ConfigureHints(bool showAllWords)
+    {
+        unrevealedIndexes.Clear();
+
+        for (int i = 0; i < _words.Count; i++)
+        {
+            GameObject wordObject = _words[i];
+
+            CanvasGroup canvasGroup =
+                wordObject.GetComponent<CanvasGroup>();
+
+            if (canvasGroup == null)
+            {
+                canvasGroup =
+                    wordObject.AddComponent<CanvasGroup>();
+            }
+
+            canvasGroup.alpha = showAllWords ? 1f : 0f;
+
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+
+            if (!showAllWords)
+            {
+                unrevealedIndexes.Add(i);
+            }
+        }
+    }
+
+    public void RevealRandomHint()
+    {
+        if (unrevealedIndexes.Count == 0)
+            return;
+            
+        int randomPosition =
+            Random.Range(0, unrevealedIndexes.Count);
+
+        int wordIndex =
+            unrevealedIndexes[randomPosition];
+
+        unrevealedIndexes.RemoveAt(randomPosition);
+
+        GameObject wordObject = _words[wordIndex];
+
+        CanvasGroup canvasGroup =
+            wordObject.GetComponent<CanvasGroup>();
+
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 1f;
+        }
+
+        string revealedWord =
+            currentGameData.selectedBoardData
+                .SearchWords[wordIndex].Word;
+
+        Debug.Log(
+            $"Nightmare hint revealed: {revealedWord}"
+        );
+    }
+
 }

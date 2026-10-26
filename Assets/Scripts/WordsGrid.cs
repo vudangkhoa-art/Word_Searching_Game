@@ -13,11 +13,42 @@ public class WordsGrid : MonoBehaviour
 
     private List<GameObject> _squareList = new List<GameObject>();
 
-    void Start()
+ 
+
+    public void BuildGrid()
     {
+
+        foreach (GameObject square in _squareList)
+        {
+            if (square != null)
+                Destroy(square);
+        }
+
+        _squareList.Clear();
+
+        if (currentGameData == null ||
+            currentGameData.selectedBoardData == null)
+        {
+            Debug.LogError("Board data is missing!");
+            return;
+        }
+
         SpawnGridSquares();
-        SetSquaresPosition();
+
+        if (_squareList.Count > 0)
+        {
+            SetSquaresPosition();
+        }
+
+        Debug.Log(
+            "Grid displayed: " +
+            currentGameData.selectedBoardData.Columns +
+            "x" +
+            currentGameData.selectedBoardData.Rows
+        );
     }
+
+
 
     private void SetSquaresPosition()
     {
